@@ -1,0 +1,65 @@
+from machine import ADC, I2C, Pin
+import ssd1306
+import time
+
+# 初始化 I2C (D1 = SCL, D2 = SDA)
+i2c = I2C(scl=Pin(5), sda=Pin(4))
+
+# 初始化 SSD1306 OLED 顯示器
+oled = ssd1306.SSD1306_I2C(128, 64, i2c)
+
+# 初始化 ADC 讀取五向按鍵
+adc = ADC(0)
+
+# 定義按鍵範圍
+KEY_UP    = 950  
+KEY_DOWN  = 900  
+KEY_LEFT  = 750  
+KEY_RIGHT = 600  
+KEY_PRESS = 450  
+KEY_RESET = 150  
+KEY_SET   = 300  
+
+# 定義點的位置
+x, y = 64, 32  # 初始位置在螢幕中央
+STEP = 2  # 每次移動的距離
+
+def get_key():
+    """讀取按鍵 ADC 值，並回傳按鍵方向"""
+    val = adc.read()
+    
+    if val > KEY_UP: 
+        return "UP"
+    elif KEY_DOWN <= val < KEY_UP:
+        return "DOWN"
+    elif KEY_LEFT <= val < KEY_DOWN:
+        return "LEFT"
+    elif KEY_RIGHT <= val < KEY_LEFT:
+        return "RIGHT"
+    elif KEY_PRESS <= val < KEY_RIGHT:
+        return "PRESS"
+    
+    return None  # 無按鍵按下
+
+# 主迴圈：讓點可以移動
+while True:
+    key = get_key()
+
+    # 更新點的位置
+    if key == "UP" and y > 0:
+        y -= STEP
+    elif key == "DOWN" and y < 63:
+        y += STEP
+    elif key == "LEFT" and x > 0:
+        x -= STEP
+    elif key == "RIGHT" and x < 127:
+        x += STEP
+
+    # 更新 OLED 顯示
+    oled.fill(0)  # 清除畫面
+    oled.fill_rect()
+    #oled.pixel(x, y, 1)  # 繪製新位置的點
+    oled.show()  # 顯示更新後的畫面
+
+    time.sleep(0.1)  # 小延遲，避免移動過快
+
